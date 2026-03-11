@@ -3,197 +3,704 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quality Rubric Breakdown</title>
+    <title>Quality Rubric Wordsearch</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { margin: 0; background-color: #4a6a45; font-family: system-ui, -apple-system, sans-serif; }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #bbb; }
-    </style>
 </head>
 <body>
     <div id="root"></div>
     <script type="text/babel">
-        const { useState, useRef } = React;
+        const { useState, useRef, useEffect } = React;
 
-        const ALL_WORDS = [
-            { id: "w1", word: "OBS" }, { id: "w2", word: "backup" }, { id: "w3", word: "spotlight" },
-            { id: "w4", word: "synced" }, { id: "w5", word: "framing" }, { id: "w6", word: "legal" },
-            { id: "w7", word: "35%" }, { id: "w8", word: "statistical" }, { id: "w9", word: "worksheet" },
-            { id: "w10", word: "PMC" }, { id: "w11", word: "verbatim" }, { id: "w12", word: "suspended" },
-            { id: "w13", word: "Speaker View" }, { id: "w14", word: "14 days" }, { id: "w15", word: "15 seconds" },
-            { id: "w16", word: "30 seconds" }, { id: "w17", word: "volume" }, { id: "w18", word: "PMQ" },
-            { id: "w19", word: "#guru-video-help" }, { id: "w20", word: "distracting" }, { id: "w21", word: "middle" },
-            { id: "d1", word: "transcript" }, { id: "d2", word: "AWS" }, { id: "d3", word: "dashboard" },
-            { id: "d4", word: "60 seconds" }, { id: "d5", word: "cloud" }, { id: "d6", word: "counsel" }
-        ];
+        // === PASTE EVERYTHING YOU COPIED FROM CLAUDE BELOW THIS LINE ===
 
-        const ANSWER_KEY = {
-            b1: "w8", b2: "w7", b3: "w1", b4: "w2", b5: "w4", b6: "w13", b7: "w5", b8: "w3", b9: "w6",
-            b10: "w11", b11: "w15", b12: "w12", b13: "w9", b14: "w16", b15: "w14", b16: "w17", b17: "w18",
-            b18: "w10", b19: "w19", b20: "w20", b21: "w21"
-        };
+// ─── WORD BANK: 18 correct answers + 6 red herrings ─────────────────────────
+const ALL_WORDS = [
+  // Correct answers
+  { id: "w1",  word: "OBS",           decoy: false },
+  { id: "w2",  word: "backup",        decoy: false },
+  { id: "w3",  word: "spotlight",     decoy: false },
+  { id: "w4",  word: "synced",        decoy: false },
+  { id: "w5",  word: "framing",       decoy: false },
+  { id: "w6",  word: "legal",         decoy: false },
+  { id: "w7",  word: "35%",           decoy: false },
+  { id: "w8",  word: "statistical",   decoy: false },
+  { id: "w9",  word: "worksheet",     decoy: false },
+  { id: "w10", word: "PMC",           decoy: false },
+  { id: "w11", word: "verbatim",      decoy: false },
+  { id: "w12", word: "suspended",     decoy: false },
+  { id: "w13", word: "Speaker View",  decoy: false },
+  { id: "w14", word: "14 days",       decoy: false },
+  { id: "w15", word: "15 seconds",    decoy: false },
+  { id: "w16", word: "30 seconds",    decoy: false },
+  { id: "w17", word: "volume",        decoy: false },
+  { id: "w18", word: "PMQ",           decoy: false },
+  { id: "w19", word: "#guru-video-help", decoy: false },
+  { id: "w20", word: "distracting",      decoy: false },
+  { id: "w21", word: "middle",           decoy: false },
+  // Red herrings
+  { id: "d1",  word: "transcript",    decoy: true  },
+  { id: "d2",  word: "AWS",           decoy: true  },
+  { id: "d3",  word: "dashboard",     decoy: true  },
+  { id: "d4",  word: "60 seconds",    decoy: true  },
+  { id: "d5",  word: "cloud",         decoy: true  },
+  { id: "d6",  word: "counsel",       decoy: true  },
+];
 
-        const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
+const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
 
-        function QARubricMission() {
-            const [fills, setFills] = useState({});
-            const [selectedBlank, setSelectedBlank] = useState(null);
-            const [wordBank, setWordBank] = useState(() => shuffle(ALL_WORDS).map(w => ({ ...w, used: false })));
-            const [correct, setCorrect] = useState({});
-            const [lives, setLives] = useState(3);
-            const [shake, setShake] = useState(null);
-            const [gameOver, setGameOver] = useState(false);
-            const [win, setWin] = useState(false);
+const ANSWER_KEY = {
+  b1:  "w8",   // statistical
+  b2:  "w7",   // 35%
+  b3:  "w1",   // OBS
+  b4:  "w2",   // backup
+  b5:  "w4",   // synced
+  b6:  "w13",  // Speaker View
+  b7:  "w5",   // framing
+  b8:  "w3",   // spotlight
+  b9:  "w6",   // legal
+  b10: "w11",  // verbatim
+  b11: "w15",  // 15 seconds
+  b12: "w12",  // suspended
+  b13: "w9",   // worksheet
+  b14: "w16",  // 30 seconds
+  b15: "w14",  // 14 days
+  b16: "w17",  // volume
+  b17: "w18",  // PMQ
+  b18: "w10",  // PMC
+  b19: "w19",  // #guru-video-help
+  b20: "w20",  // distracting
+  b21: "w21",  // middle
+};
 
-            const handleWordClick = (word) => {
-                if (!selectedBlank || word.used || gameOver) return;
-                if (ANSWER_KEY[selectedBlank] === word.id) {
-                    const newCorrect = { ...correct, [selectedBlank]: true };
-                    setFills({ ...fills, [selectedBlank]: word.id });
-                    setCorrect(newCorrect);
-                    setWordBank(wordBank.map(w => w.id === word.id ? { ...w, used: true } : w));
-                    setSelectedBlank(null);
-                    if (Object.keys(newCorrect).length === 21) setWin(true);
-                } else {
-                    setShake(selectedBlank);
-                    setLives(l => l - 1);
-                    if (lives <= 1) setGameOver(true);
-                    setTimeout(() => setShake(null), 500);
-                }
-            };
+const TOTAL_BLANKS = Object.keys(ANSWER_KEY).length;
+const MAX_LIVES = 3;
 
-            const B = (id) => {
-                const isCorrect = correct[id];
-                const isSelected = selectedBlank === id;
-                const filledWord = ALL_WORDS.find(w => w.id === fills[id])?.word;
-                return (
-                    <span onClick={() => !isCorrect && !gameOver && setSelectedBlank(id)} 
-                          className={`inline-block px-2 py-0.5 mx-1 rounded border-2 transition-all cursor-pointer align-middle text-sm font-bold
-                          ${isCorrect ? "border-green-500 bg-green-50 text-green-600" : 
-                            isSelected ? "border-blue-500 bg-blue-50 text-blue-600 outline-none ring-2 ring-blue-200" : "border-dashed border-gray-300 bg-gray-50 text-gray-400"}`}
-                          style={{ minWidth: '80px', textAlign: 'center', animation: shake === id ? 'shake 0.4s' : 'none' }}>
-                        {isCorrect ? filledWord : isSelected ? "Select..." : "[ ____ ]"}
-                    </span>
-                );
-            };
+function Blank({ id, selectedBlank, setSelectedBlank, fills, correct, shake, gameOver }) {
+  const isCorrect = correct[id];
+  const isSelected = selectedBlank === id;
+  const isShaking = shake === id;
+  const filledWord = ALL_WORDS.find(w => w.id === fills[id])?.word;
 
-            return (
-                <div className="min-h-screen p-4 md:p-8 flex items-center justify-center">
-                    <div className="bg-white w-full max-w-4xl h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-black/20">
-                        {/* Browser Header */}
-                        <div className="bg-[#dee1e6] p-3 flex items-center gap-2 border-b border-gray-300">
-                            <div className="flex gap-1.5"><div className="w-3 h-3 rounded-full bg-[#ff5f57] shadow-inner"/> <div className="w-3 h-3 rounded-full bg-[#febc2e] shadow-inner"/> <div className="w-3 h-3 rounded-full bg-[#28c840] shadow-inner"/></div>
-                            <div className="bg-white px-4 py-1.5 rounded-t-lg text-xs font-medium ml-4 shadow-sm">Quality Rubric Breakdown — Guru</div>
-                        </div>
+  if (isCorrect) {
+    return (
+      <span style={{
+        display: "inline-block", padding: "1px 8px", margin: "0 2px",
+        borderRadius: 3, border: "1.5px solid #00b887",
+        background: "#00b88718", color: "#00b887",
+        fontWeight: 700, fontSize: 13, verticalAlign: "middle", whiteSpace: "nowrap",
+      }}>{filledWord}</span>
+    );
+  }
+  return (
+    <span
+      onClick={() => !gameOver && setSelectedBlank(id === selectedBlank ? null : id)}
+      style={{
+        display: "inline-block", minWidth: 80, padding: "1px 8px", margin: "0 2px",
+        borderRadius: 3,
+        border: isSelected ? "1.5px solid #1a73e8" : "1.5px dashed #bbb",
+        background: isSelected ? "#e8f0fe" : "#f5f5f5",
+        color: isSelected ? "#1a73e8" : "#bbb",
+        fontWeight: 600, fontSize: 13,
+        cursor: gameOver ? "default" : "pointer",
+        transition: "all 0.15s",
+        verticalAlign: "middle", textAlign: "center",
+        animation: isShaking ? "shake 0.4s" : "none",
+      }}
+    >
+      {isSelected ? "▸ pick a word" : "[ ______ ]"}
+    </span>
+  );
+}
 
-                        {/* Content Area */}
-                        <div className="flex-1 overflow-y-auto p-8 md:p-12 space-y-8 text-gray-800 leading-relaxed">
-                            <h1 className="text-4xl font-bold border-b-4 border-green-500 pb-4">Quality Rubric Breakdown</h1>
-                            
-                            <section>
-                                <h2 className="text-2xl font-bold mt-8 mb-4">What is Quality? 🏆️</h2>
-                                <p>The QA team reviews depositions to provide a quality score. QA randomly selects 1 to 2 jobs from each videographer each week by downloading the {B('b3')} recording.</p>
-                                <p className="mt-4"><strong>Statistical significance:</strong> To hold {B('b1')} significance, we need to review at minimum {B('b2')} of total eligible jobs.</p>
-                            </section>
+function Callout({ color, children }) {
+  const map = {
+    green:  { bg: "#e0ecd6" },
+    blue:   { bg: "#e0f1ff" },
+    purple: { bg: "#ece0ff" },
+    pink:   { bg: "#fedfea" },
+  };
+  const c = map[color] || map.green;
+  return (
+    <div style={{
+      background: c.bg,
+      borderRadius: 6, padding: "12px 16px",
+      margin: "10px 0", fontSize: 15, lineHeight: 1.65, color: "#333",
+    }}>{children}</div>
+  );
+}
 
-                            <hr className="border-gray-100" />
+function Hearts({ lives }) {
+  return (
+    <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
+      {Array.from({ length: MAX_LIVES }).map((_, i) => (
+        <span key={i} style={{
+          fontSize: 15,
+          opacity: i < lives ? 1 : 0.2,
+          filter: i < lives ? "none" : "grayscale(1)",
+          transition: "opacity 0.3s",
+        }}>❤️</span>
+      ))}
+    </div>
+  );
+}
 
-                            <section>
-                                <h2 className="text-xl font-bold text-green-700">1 — 🟢 OBS Recording Correct 📹</h2>
-                                <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400 my-4 italic">This is the most important task because QA relies on backup recordings.</div>
-                                <ul className="list-disc ml-6 space-y-2">
-                                    <li>Zoom should be set to <strong>"{B('b6')}"</strong>.</li>
-                                    <li>Log in to AWS to ensure your {B('b4')} captures everything.</li>
-                                    <li>Videographer must be {B('b5')} within 5 seconds of the CR.</li>
-                                </ul>
-                            </section>
+export default function QARubricMission() {
+  const initBank = () => shuffle(ALL_WORDS).map(w => ({ ...w, used: false }));
 
-                            <section>
-                                <h2 className="text-xl font-bold text-green-700">5 — 🟢 Witness Framing 🖼️</h2>
-                                <p>Work with the witness to ensure the background isn't {B('b20')}. Confirm the full {B('b9')} name, including {B('b21')} names if provided.</p>
-                            </section>
+  const [fills, setFills] = useState({});
+  const [selectedBlank, setSelectedBlank] = useState(null);
+  const [wordBank, setWordBank] = useState(initBank);
+  const [shake, setShake] = useState(null);
+  const [correct, setCorrect] = useState({});
+  const [lives, setLives] = useState(MAX_LIVES);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+  const [wrongFlash, setWrongFlash] = useState(false);
+  const cardRef = useRef(null);
 
-                            <section>
-                                <h2 className="text-xl font-bold text-green-700">6 — 🟢 Spotlight the Witness 🔦</h2>
-                                <p>{B('b8')} the witness prior to going on the record. If the spotlight is dropped, replace it within {B('b14')}.</p>
-                            </section>
+  const correctCount = Object.values(correct).filter(Boolean).length;
+  const progress = Math.round((correctCount / TOTAL_BLANKS) * 100);
 
-                            <section>
-                                <h2 className="text-xl font-bold text-green-700">9 — 🟢 General Recommendations ☝️</h2>
-                                <p>Room recordings are securely stored for {B('b15')}.</p>
-                            </section>
+  const handleWordClick = (word) => {
+    if (!selectedBlank || word.used || gameOver) return;
+    const expected = ANSWER_KEY[selectedBlank];
+    if (expected === word.id) {
+      const newCorrect = { ...correct, [selectedBlank]: true };
+      setFills(f => ({ ...f, [selectedBlank]: word.id }));
+      setCorrect(newCorrect);
+      setWordBank(wb => wb.map(w => w.id === word.id ? { ...w, used: true } : w));
+      setSelectedBlank(null);
+      if (Object.values(newCorrect).filter(Boolean).length === TOTAL_BLANKS) {
+        setTimeout(() => setShowCelebration(true), 400);
+      }
+    } else {
+      setShake(selectedBlank);
+      setWrongFlash(true);
+      setTimeout(() => { setShake(null); setWrongFlash(false); }, 500);
+      const newLives = lives - 1;
+      setLives(newLives);
+      if (newLives <= 0) setTimeout(() => setGameOver(true), 600);
+    }
+  };
 
-                            <section>
-                                <h2 className="text-xl font-bold text-green-700">10 — 🟢 Official Read-On 🎙️</h2>
-                                <p>This must be read {B('b10')} (word-for-word). If you take longer than {B('b11')} to respond to an off-the-record call, points are lost.</p>
-                            </section>
+  const handleReset = () => {
+    setFills({}); setCorrect({}); setSelectedBlank(null);
+    setWordBank(initBank()); setShowCelebration(false);
+    setGameOver(false); setShake(null); setLives(MAX_LIVES); setWrongFlash(false);
+  };
 
-                            <section>
-                                <h2 className="text-xl font-bold text-blue-700">12 — 🔵 Responsiveness to Issues ❗</h2>
-                                <p>Serious issues should be addressed using {B('b19')}. Spotlight replacement must happen within {B('b14')}.</p>
-                            </section>
+  const B = ({ id }) => (
+    <Blank id={id} selectedBlank={selectedBlank} setSelectedBlank={setSelectedBlank}
+      fills={fills} correct={correct} shake={shake} gameOver={gameOver} />
+  );
 
-                            <section>
-                                <h2 className="text-xl font-bold text-purple-700">13 — 🟣 Official Read-Off 🎙️</h2>
-                                <p>Classification of witness ({B('b17')}, PMK, etc) must be maintained. Correctly read the {B('b16')} number.</p>
-                            </section>
+  const H1 = ({ children }) => (
+    <h1 style={{ fontSize: 26, fontWeight: 700, color: "#111", margin: "28px 0 10px", lineHeight: 1.25 }}>{children}</h1>
+  );
+  const H2 = ({ children }) => (
+    <h2 style={{ fontSize: 18, fontWeight: 700, color: "#111", margin: "26px 0 8px", lineHeight: 1.3 }}>{children}</h2>
+  );
+  const P = ({ children, style }) => (
+    <p style={{ fontSize: 15, lineHeight: 1.65, color: "#333", margin: "8px 0", ...style }}>{children}</p>
+  );
+  const HR = () => <hr style={{ border: "none", borderTop: "1px solid #e8e8e8", margin: "20px 0" }} />;
+  const OL = ({ items, indent = 0 }) => (
+    <ol style={{ margin: "8px 0", paddingLeft: 24 + indent * 18, fontSize: 15, lineHeight: 1.65, color: "#333" }}>
+      {items.map((it, i) => <li key={i} style={{ marginBottom: 5 }}>{it}</li>)}
+    </ol>
+  );
+  const UL = ({ items }) => (
+    <ul style={{ margin: "6px 0", paddingLeft: 24, fontSize: 15, lineHeight: 1.65, color: "#333" }}>
+      {items.map((it, i) => <li key={i} style={{ marginBottom: 5 }}>{it}</li>)}
+    </ul>
+  );
+  const BQ = ({ children }) => (
+    <blockquote style={{ borderLeft: "3px solid #e0e0e0", paddingLeft: 14, margin: "10px 0", color: "#555", fontSize: 15, lineHeight: 1.65 }}>{children}</blockquote>
+  );
+  const Note = ({ children }) => (
+    <p style={{ fontSize: 14, color: "#444", margin: "8px 0", lineHeight: 1.6 }}>{children}</p>
+  );
 
-                            <section>
-                                <h2 className="text-xl font-bold text-purple-700">14 — 🟣 Video Orders 📝</h2>
-                                <p>If a depo is {B('b12')}, you don't need to ask for orders on the record.</p>
-                            </section>
+  return (
+    <div style={{ width: "100%", height: "100vh", overflow: "hidden", fontFamily: "system-ui, -apple-system, sans-serif", userSelect: "none" }}>
+      <div style={{
+        width: "100%", height: "100%", position: "relative",
+        background: `
+          radial-gradient(ellipse 120% 80% at 15% 60%, #4a6741 0%, transparent 55%),
+          radial-gradient(ellipse 80% 60% at 80% 75%, #3d5c3a 0%, transparent 50%),
+          radial-gradient(ellipse 60% 50% at 50% 30%, #7a9e6e 0%, transparent 55%),
+          radial-gradient(ellipse 40% 35% at 30% 45%, #c9a96e 0%, transparent 45%),
+          radial-gradient(ellipse 35% 30% at 65% 55%, #b07a8a 0%, transparent 40%),
+          radial-gradient(ellipse 50% 40% at 50% 70%, #2e4a35 0%, transparent 55%),
+          radial-gradient(ellipse 30% 25% at 20% 75%, #d4b896 0%, transparent 40%),
+          radial-gradient(ellipse 25% 20% at 75% 40%, #e8c4a8 0%, transparent 35%),
+          radial-gradient(ellipse 20% 15% at 45% 60%, #c4a0b0 0%, transparent 35%),
+          linear-gradient(175deg, #6b8f5e 0%, #8aab72 15%, #5a7a50 30%, #4a6a45 45%, #3d5e3a 60%, #2e4a2e 75%, #253d25 100%)
+        `,
+      }}>
+        {/* Menu Bar */}
+        <div style={{
+          position: "absolute", top: 0, left: 0, right: 0, height: 26,
+          background: "rgba(25,25,25,0.6)", backdropFilter: "blur(20px)",
+          display: "flex", alignItems: "center", zIndex: 100,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, paddingLeft: 14, color: "rgba(255,255,255,0.9)", fontSize: 13, fontWeight: 500 }}>
+            <span style={{ fontWeight: 700, fontSize: 14 }}></span>
+            <span>Finder</span>
+            {["File","Edit","View","Go","Window","Help"].map(m => (
+              <span key={m} style={{ color: "rgba(255,255,255,0.5)" }}>{m}</span>
+            ))}
+          </div>
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14, paddingRight: 14, color: "rgba(255,255,255,0.85)", fontSize: 12 }}>
+            {/* Battery */}
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <span>87%</span>
+              <svg width="25" height="12" viewBox="0 0 25 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="0.5" y="0.5" width="21" height="11" rx="2.5" stroke="rgba(255,255,255,0.8)" strokeWidth="1"/>
+                <rect x="22" y="3.5" width="2.5" height="5" rx="1" fill="rgba(255,255,255,0.6)"/>
+                <rect x="2" y="2" width="16" height="8" rx="1.5" fill="rgba(255,255,255,0.85)"/>
+              </svg>
+            </div>
+            {/* WiFi */}
+            <svg width="16" height="12" viewBox="0 0 16 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 9.5C8.69 9.5 9.25 10.06 9.25 10.75S8.69 12 8 12s-1.25-.56-1.25-1.25S7.31 9.5 8 9.5z" fill="rgba(255,255,255,0.85)"/>
+              <path d="M8 6.5C9.6 6.5 11.04 7.15 12.1 8.2l1.06-1.06A7.23 7.23 0 008 5a7.23 7.23 0 00-5.16 2.14L3.9 8.2A5.23 5.23 0 018 6.5z" fill="rgba(255,255,255,0.85)"/>
+              <path d="M8 3C10.7 3 13.13 4.07 14.9 5.84l1.06-1.06A9.97 9.97 0 008 1 9.97 9.97 0 001.04 4.78L2.1 5.84A8.97 8.97 0 018 3z" fill="rgba(255,255,255,0.85)"/>
+            </svg>
+            {/* Date/time */}
+            <span>Tue Mar 10 &nbsp; 11:05 AM</span>
+          </div>
+        </div>
 
-                            <section>
-                                <h2 className="text-xl font-bold text-purple-700">15 — 🟣 Video Worksheet 📥</h2>
-                                <p>The {B('b13')} must match the recording. Reports post directly to your {B('b18')} in the {B('b18')} channel.</p>
-                            </section>
-                        </div>
+        {/* Chrome */}
+        <div style={{
+          position: "absolute", top: 42, left: "50%", transform: "translateX(-50%)",
+          width: "min(980px, 96%)", height: "calc(100vh - 96px)",
+          background: wrongFlash ? "#fff8f8" : "#fff",
+          borderRadius: 10,
+          boxShadow: wrongFlash
+            ? "0 28px 70px rgba(0,0,0,0.5), 0 0 0 2.5px #ff5f57"
+            : "0 28px 70px rgba(0,0,0,0.5), 0 0 0 0.5px rgba(0,0,0,0.3)",
+          display: "flex", flexDirection: "column", overflow: "hidden", zIndex: 10,
+          transition: "box-shadow 0.2s, background 0.2s",
+        }}>
 
-                        {/* Word Bank Sidebar/Footer */}
-                        <div className="bg-gray-50 border-t border-gray-200 p-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <span className="text-xs font-black uppercase tracking-widest text-gray-500">Word Bank ({Object.keys(correct).length}/21)</span>
-                                <div className="flex gap-1">
-                                    {[...Array(3)].map((_, i) => (
-                                        <span key={i} className={`text-lg transition-opacity ${i >= lives ? "opacity-20 grayscale" : ""}`}>❤️</span>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {wordBank.map(w => (
-                                    <button key={w.id} disabled={w.used || gameOver} onClick={() => handleWordClick(w)}
-                                            className={`px-3 py-1.5 rounded-full text-sm font-semibold border transition-all
-                                            ${w.used ? "bg-gray-200 border-gray-200 text-gray-400 line-through" : "bg-white border-gray-300 text-gray-700 hover:border-blue-500 hover:shadow-sm"}`}>
-                                        {w.word}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+          {/* Chrome Title Bar */}
+          <div style={{ background: "#dee1e6", padding: "8px 12px 0", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            <div style={{ display: "flex", gap: 6, marginRight: 4 }}>
+              {["#ff5f57","#febc2e","#28c840"].map((c,i) => (
+                <div key={i} style={{ width: 12, height: 12, borderRadius: "50%", background: c, boxShadow: "0 0 0 0.5px rgba(0,0,0,0.2)" }} />
+              ))}
+            </div>
+            <div style={{ background: "#fff", borderRadius: "6px 6px 0 0", padding: "6px 14px", fontSize: 12, color: "#333", display: "flex", alignItems: "center", gap: 6, boxShadow: "0 -1px 3px rgba(0,0,0,0.06)" }}>
+              <img src="https://www.getguru.com/favicon.ico" width={13} height={13} style={{ borderRadius: 2 }} onError={e => e.target.style.display='none'} />
+              Quality Rubric Breakdown — Guru
+            </div>
+          </div>
 
-                        {/* Modals */}
-                        {(gameOver || win) && (
-                            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-6">
-                                <div className="bg-white p-8 rounded-2xl shadow-2xl text-center max-w-sm w-full">
-                                    <div className="text-6xl mb-4">{win ? "🏆" : "💔"}</div>
-                                    <h2 className="text-2xl font-bold mb-2">{win ? "Rubric Expert!" : "Game Over"}</h2>
-                                    <p className="text-gray-600 mb-6">{win ? "You nailed every blank. The Vid Squad is lucky to have you!" : "You ran out of lives. Review the rubric and try again!"}</p>
-                                    <button onClick={() => window.location.reload()} className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-colors">Restart Game</button>
-                                </div>
-                            </div>
-                        )}
+          {/* Address Bar */}
+          <div style={{ background: "#f5f5f5", padding: "6px 12px", display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid #ddd", flexShrink: 0 }}>
+            <div style={{ display: "flex", gap: 5, color: "#666", fontSize: 14 }}>
+              <span style={{ cursor: "pointer", padding: "0 3px" }}>←</span>
+              <span style={{ cursor: "pointer", padding: "0 3px", color: "#ccc" }}>→</span>
+              <span style={{ cursor: "pointer", padding: "0 3px" }}>↻</span>
+            </div>
+            <div style={{ flex: 1, background: "#fff", borderRadius: 20, padding: "4px 14px", fontSize: 12, color: "#333", display: "flex", alignItems: "center", gap: 6, border: "1px solid #ddd" }}>
+              <span style={{ color: "#34a853", fontSize: 11 }}>🔒</span>
+              <span style={{ color: "#555" }}>app.getguru.com</span>
+              <span style={{ color: "#888" }}>/cards/i7xnGpoT/Quality-Rubric-Breakdown</span>
+            </div>
+          </div>
+
+          {/* Guru App */}
+          <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+
+            {/* Card */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "#fff" }}>
+              <div ref={cardRef} style={{ flex: 1, overflowY: "auto", padding: "24px 48px 160px" }}>
+
+                {/* Meta — matches screenshot exactly */}
+                <div style={{
+                  borderBottom: "3px solid #00b887",
+                  paddingBottom: 10,
+                  marginBottom: 16,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}>
+                  {/* Left: Verified badge + avatar + author */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{
+                      display: "inline-flex", alignItems: "center", gap: 5,
+                      border: "1.5px solid #00b887", borderRadius: 6,
+                      padding: "4px 10px", fontSize: 13, color: "#111",
+                      fontWeight: 600, cursor: "pointer", background: "#fff",
+                    }}>
+                      <span style={{ color: "#00b887", fontSize: 14 }}>✔</span>
+                      Verified
+                      <span style={{ fontSize: 10, color: "#555", marginLeft: 1 }}>▾</span>
                     </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <div style={{
+                        width: 22, height: 22, borderRadius: "50%",
+                        background: "#e05a2b",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 10, fontWeight: 700, color: "#fff", flexShrink: 0,
+                      }}>SH</div>
+                      <span style={{ fontSize: 13, color: "#111" }}>
+                        <strong style={{ fontWeight: 600 }}>Samantha Henry</strong> updated 4 days ago
+                      </span>
+                    </div>
+                  </div>
+                  {/* Right: action icons + Follow + Share + X */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {["⋮","✎","💬","♡","🔗","⚡"].map((ic, i) => (
+                      <span key={i} style={{ fontSize: i === 0 ? 16 : 14, color: "#888", cursor: "pointer", padding: "0 2px" }}>{ic}</span>
+                    ))}
+                    <button style={{
+                      background: "#fff", border: "1px solid #ddd",
+                      borderRadius: 6, padding: "5px 12px",
+                      fontSize: 13, fontWeight: 600, color: "#111", cursor: "pointer",
+                    }}>Follow</button>
+                    <button style={{
+                      background: "#111", border: "none",
+                      borderRadius: 6, padding: "5px 14px",
+                      fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer",
+                    }}>Share</button>
+                    <span style={{ fontSize: 18, color: "#aaa", cursor: "pointer", marginLeft: 2 }}>✕</span>
+                  </div>
                 </div>
-            );
-        }
 
-        ReactDOM.createRoot(document.getElementById('root')).render(<QARubricMission />);
+                {/* Breadcrumb row */}
+                <div style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  borderBottom: "1px solid #eee", paddingBottom: 10, marginBottom: 20,
+                }}>
+                  <span style={{ fontSize: 13, color: "#555" }}>≡</span>
+                  <span style={{ fontSize: 13, color: "#555" }}>
+                    Remote Services - Videography &rsaquo; Reference &rsaquo; Remote Services
+                  </span>
+                  <span style={{ width: 13 }} />
+                </div>
+
+                <h1 style={{ fontSize: 28, fontWeight: 700, color: "#111", margin: "0 0 20px", lineHeight: 1.2 }}>Quality Rubric Breakdown</h1>
+
+                <H1><strong>What is Quality?</strong> 🏆️</H1>
+                <P>The Quality Assurance team reviews depositions for every videographer in order to provide feedback and a quality score based on those reviews. The main goals of Quality Assurance are to:</P>
+                <OL items={[
+                  "Measure performance in a quantifiable and objective way.",
+                  "Identify areas we can improve in as a team.",
+                  "Create a consistence and reliable experience for our clients.",
+                ]} />
+
+                <HR />
+
+                <H2>How are jobs selected for review?</H2>
+                <P>Only Zoom jobs featuring the SC app with a videography service will be selected for review. QA will randomly select 1 to 2 jobs from each videographer to review each week. Each review is done by downloading the <B id="b3" /> recording for that job and reviewing the footage.</P>
+                <P><strong>Statistical significance:</strong> In order for our quality results to hold <B id="b1" /> significance from a departmental standpoint, we need to review, at minimum, <B id="b2" /> of total eligible jobs across the entire videography team.</P>
+
+                <HR />
+
+                <H1><strong>Quality Rubric</strong> ✅</H1>
+                <H2>How is performance measured?</H2>
+                <P>Quality reviews the OBS footage from a job and checks that the tasks detailed in the Video Worksheet and in Guru are being completed properly. The tasks fall under three main categories:</P>
+                <OL items={["Pre-depo tasks 🟢","During depo tasks 🔵","Post-depo tasks 🟣"]} />
+                <H2><strong>The Math</strong></H2>
+                <P>Each task is given a weighted point value. Earned points are divided by the total amount of possible points (100) to give you a percentage, which resets at the end of each month.</P>
+
+                <HR />
+
+                <H1><strong>Tasks - Explained</strong></H1>
+                <P style={{ color: "#f7412d", fontSize: 14, textAlign: "center", margin: "12px 0" }}>Video Note: Video is currently out of date with information on this page, please refer to the written rubric for fully updated expectations.</P>
+
+                <H2>1 — 🟢 OBS Recording Correct 📹 · 10 points</H2>
+                <Callout color="green">
+                  This task is the <em><strong>most important task</strong></em> because QA relies on the backup recordings to make our video products for clients.
+                </Callout>
+                <OL items={[
+                  "The recording starts as soon as you enter the room and runs until the room is closed.",
+                  "The Zoom recording is formatted properly — Zoom is as large as possible in frame — audio is recorded.",
+                  <>The Zoom recording shows the gallery above the deponent, including non-video participants. Zoom should be set to <strong>"<B id="b6" />"</strong>. When exhibits are shared, use "Side by Side: Speaker".</>,
+                ]} />
+                <Callout color="blue">
+                  <strong>Workflow Instructions:</strong> Log in to AWS → Sign on to the Zoom room on your local device → Sign on to the Zoom room on AWS → Start your OBS recording. <strong>This way, the Depo room is never unsupervised, and your <B id="b4" /> will capture everything it needs to.</strong>
+                </Callout>
+                <Note>NOTE: Any OBS recording issues must be notated on the Video Worksheet!</Note>
+                <BQ>Unavoidable OBS errors, such as an unexplainable crash, will not count against your score for that depo.</BQ>
+
+                <H2>2 — 🟢 Effectively Troubleshot Any Tech Issues 👀 · 10 points</H2>
+                <P><strong>Ensure that any tech issues that arise are either fully resolved or sufficiently addressed by the videographer.</strong></P>
+                <Callout color="green">The vid is the designated tech expert in the room and responsible for the audio/video quality of the recordings.</Callout>
+                <OL items={[
+                  "Tech issues were actively addressed and resolved in a timely manner.",
+                  "If the issue could not be resolved, you at least addressed it sufficiently to proceed.",
+                  "If someone's issue is being resolved by another party, make it clear you're available to assist.",
+                  <>If no solution could be found, all available resources were utilized including <a href="#" style={{ color: "#1a73e8" }}>#guru-video-help</a> and <a href="#" style={{ color: "#1a73e8" }}>#video-help</a>.</>,
+                ]} />
+
+                <H2>3 — 🟢 Synced Times with the CR ⌚ · 4 points</H2>
+                <P><strong>The videographer must be <B id="b5" /> within 5 seconds of the CR on every job.</strong></P>
+                <Callout color="green">This is an important step to ensuring our video products align with the Court Reporter's legal transcript and record of the deposition.</Callout>
+                <OL items={[
+                  <>Time sync was performed by reading out the full time following this format — <strong>hour:minutes:seconds.</strong></>,
+                  "If the CR's time was off, you assisted them in setting the computer clock to the correct time.",
+                  "If the CR cannot get their equipment to sync within 5 seconds, ensure the time difference is noted on the worksheet.",
+                ]} />
+
+                <H2>4 — 🟢 Videographer Prepared and Available Until Start Time 🙂 · 6 points</H2>
+                <P><strong>Videographers must be available and keep their camera on until the witness is sworn in.</strong></P>
+                <Callout color="green">The 30-minute period before the depo starts is perhaps the most important portion — it's when most technical issues arise and when you greet and introduce yourself.</Callout>
+                <OL items={[
+                  <>When the backup starts, you are on camera with <B id="b7" /> and lighting that reflects the framing guide provided by Steno.</>,
+                  "The camera was left on from when you joined the room until the deponent is sworn in.",
+                  "You aren't actively distracted — no visible phone, eating, or sleeping.",
+                  <>Your Zoom tile matches: <strong>"First Name Last Name (Videographer)"</strong></>,
+                  "You are visibly wearing headphones.",
+                ]} />
+
+                <H2>5 — 🟢 Witness Framing 🖼️ · 10 points</H2>
+                <P><strong>Work with the witness to secure the best framing, lighting, and the least distracting background as possible.</strong></P>
+                <Callout color="green">This step is crucial in making sure the video products we create, which may be used in court, capture every response and reaction from the witness at the highest quality achievable.</Callout>
+                <OL items={[
+                  "Witness must be fully in frame — the full face of the deponent must be captured.",
+                  "Witness must be sufficiently lit so that their facial features can be clearly seen.",
+                  "Witness must be centered in the frame, and auto-framing/Center Stage must be disabled.",
+                  "Mobile devices must be rotated to landscape and set on a stable surface.",
+                  <>If the deponent's backdrop is <B id="b20" />, you may opt to blur it. All virtual backgrounds must be removed or changed to blurred.</>,
+                ]} />
+
+                <H2>6 — 🟢 Spotlight the Witness 🔦 · 10 points</H2>
+                <P><strong><B id="b8" /> the witness for the Zoom cloud recording prior to going on the record.</strong></P>
+                <Callout color="green">This is another <strong>critical task</strong> and objectively the most important for our editors. This makes the Zoom cloud recording highlight the witness for the duration of the meeting.</Callout>
+                <OL items={[
+                  "The spotlight must be set before going on the record for points to be awarded.",
+                  "If the spotlight is removed while on the record, reapply and make a note on the worksheet, checking 'missed spotlight' on any impacted sessions.",
+                ]} />
+                <Note>IMPORTANT: If the spotlight is removed after the initial session and not reapplied before going back on the record, points can't be awarded in the "Responsive to Issues" portion of the rubric.</Note>
+
+                <H2>7 — 🟢 Confirm Full Legal Name of Witness 🔤 · 4 points</H2>
+                <P><strong>The videographer must confirm the full, <B id="b9" /> name of the deponent and update the Zoom tile and Worksheet.</strong></P>
+                <Callout color="green">Confirming the full legal name and renaming the Zoom tile ensures our video products hold the legal weight they are intended to. This is one of the most commonly missed tasks.</Callout>
+                <OL items={[
+                  <>You must include the words '<strong>Full</strong>' and '<strong>Legal</strong>' when asking the witness to confirm their full legal name.</>,
+                  "After updates to the witness's Zoom tile, you must receive verbal confirmation from the witness that you correctly updated the spelling.",
+                  <>Full <B id="b21" /> names must be included if provided by the deponent.</>,
+                ]} />
+
+                <H2>8 — 🟢 Zconn Mention 📨 · 4 points</H2>
+                <P><strong>Discuss the SC App with the Taking Attorney, or ensure whether they are going to use it or not.</strong></P>
+                <Callout color="green">Steno Connect is one of our biggest selling points at Steno. It's up to you to make sure it's available to our clients!</Callout>
+                <OL items={[
+                  "Talk to the TA about the app. Mention the SC app by name and confirm if they'd like to use it.",
+                  "Send out the invite to all participants in the room.",
+                  "The app must be discussed and invite sent in every job, including B2Bs.",
+                ]} />
+
+                <H2>9 — 🟢 Read the General Recommendations ☝️ · 4 points</H2>
+                <P><strong>Read the General Recommendations before reading on the record, either in full or the Abridged Recs.</strong></P>
+                <Callout color="green">The General Recommendations provide valuable information to all participants regarding expectations and best practices.</Callout>
+                <OL items={[
+                  <>Certain portions of information must be mentioned during general recs:
+                    <OL indent={1} items={[
+                      <>The room is being recorded and will be securely stored for <B id="b15" /></>,
+                      "Spotlight instructions",
+                      "Your phone number",
+                    ]} />
+                  </>,
+                  "There are instances where the general recommendations can be skipped or modified, such as upon direct request of the TA, or for Complex Cases.",
+                ]} />
+                <BQ>Rule of thumb: Unless you've specifically been asked not to, at least include the abridged recommendations on every job.</BQ>
+
+                <H2>10 — 🟢 Read the Official Read-On in Full 🎙️ · 6 points</H2>
+                <P><strong>Read full read-on, including the full legal witness name, date, time, time zone, case name, venue, and number.</strong></P>
+                <Callout color="green">This official introduction statement must be read accurately so the recording holds the legal weight it is intended to.</Callout>
+                <OL items={[
+                  <>The Read On was read correctly — this must be read <B id="b10" /> (word-for-word) to receive full points. Do not add or subtract anything.</>,
+                  "Be mindful of abbreviations when reading the official read-on.",
+                  "Confirm any unclear information with the TA before the depo starts.",
+                  <>Individual characters in the <strong>Case Number</strong> must be read — do not join characters together.</>,
+                ]} />
+
+                <H2>11 — 🔵 Taking Depo On/Off the Record 🚦 · 6 points</H2>
+                <P><strong>Take the depo on/off-the-record using the phrase, "We are now on/off the record. The time is HH:MM AM/PM, Timezone" verbatim.</strong></P>
+                <Callout color="blue">Reading On/Off correctly is another essential part of creating a consistent depo experience as well as adhering to legal standards.</Callout>
+                <OL items={[
+                  "Nothing is added/excluded from the read-on/off.",
+                  <>The read on/offs were done promptly and correctly. If you take longer than <B id="b11" /> to respond to a call to go off the record, points will not be awarded.</>,
+                  "You did not go off the record if counsel disagreed about doing so.",
+                  "In the case of read-offs, all counsel must be in clear agreement.",
+                ]} />
+                <Note>Note: Don't add Daylight or Standard when reading time zones, and be sure to say "time" at the end, such as "Pacific Time".</Note>
+
+                <H2>12 — 🔵 Responsiveness to Issues Throughout ❗ · 6 points</H2>
+                <P><strong>Any significant issues encountered during the depo are sufficiently resolved by the videographer.</strong></P>
+                <Callout color="blue">As the designated room facilitator, you should be the one to notice when audio/video needs addressing.</Callout>
+                <OL items={[
+                  <>More serious issues were actively addressed using all available resources including <B id="b19" />.</>,
+                  "You gauged the importance of minor issues, addressing those impacting the Audio/Video product or causing participants to struggle.",
+                  <>Spotlight of deponent, if dropped, must be replaced within <B id="b14" /> of it dropping for points to be awarded. If dropped during a break, replace it before going back on the record.</>,
+                  "You kept the TA in mind and followed their instructions.",
+                ]} />
+                <Note>NOTE: Please request to go off the record before actively troubleshooting!</Note>
+
+                <H2>13 — 🟣 Read the Official Read-Off in Full 🎙️ · 6 points</H2>
+                <P><strong>Read the full read-off, including the volume number, full witness name, case name, time, and time zone.</strong></P>
+                <Callout color="purple">This official closing statement must be read verbatim to receive full points.</Callout>
+                <OL items={[
+                  "Nothing was added/subtracted from the read-off. All important pieces of information were present and accurately stated.",
+                  <>Classification of witness (<B id="b17" />, PMK, or any specific degree/designation such as M.D.) was maintained across the read-on and read-off.</>,
+                  "Any abbreviations were stated correctly. Example: Witness John Doe, M.D. is read, 'John Doe, Medical Doctor'",
+                  <>You correctly read the <B id="b16" /> number — for Volume 1, simply read "This concludes the deposition of…"</>,
+                ]} />
+
+                <H2>14 — 🟣 Asked for Video Orders On the Record 📝 · 4 points</H2>
+                <P><strong>Verify all attorneys have been asked for orders, either by asking the group for video and transcript orders or by clarifying orders with each participant.</strong></P>
+                <Callout color="purple">Confirming how the client would like their video order prevents the editing team from having to go back and re-edit a deposition.</Callout>
+                <OL items={[
+                  "Orders were stated on the record. As long as all counsel stated their orders, this is considered complete.",
+                  "If the CR took orders or counsel stated orders before you could ask, this still counts.",
+                  "Confirm standing orders and check the job notes.",
+                ]} />
+                <BQ><strong>Complex Cases</strong> have standing orders. You do not need to ask for video orders at the end of a Complex Case deposition.</BQ>
+                <BQ>If a depo is <B id="b12" />, you don't need to ask for orders on the record. However, you can follow the CR's lead and ask for video orders while still on-the-record.</BQ>
+
+                <H2>15 — 🟣 Orders <em>and</em> Video Worksheet/Ops are Correct 📥 · 10 points</H2>
+                <P><strong>The <B id="b13" /> MUST MATCH all information stated on the OBS recording, including sessions, read-on/off times, and video orders.</strong></P>
+                <Callout color="purple">The worksheet is what communicates details of a depo to several other teams at Steno. Errors could lead to issues for the editing team or even client-impacting effects.</Callout>
+                <OL items={[
+                  "All information was updated — Job details, Deponent Name, Taking Attorney, and case details.",
+                  "No sessions are missed, and the on and off-the-record times accurately reflect what is stated on the video record.",
+                  "Video orders (or lack thereof) match what was collected from counsel.",
+                  "Accurate product information was given if asked by counsel.",
+                ]} />
+                <Callout color="pink">Note on Additional Orders: Ensure that any PiP or T2PiP products are actually producible for the job before taking them down on the worksheet.</Callout>
+
+                <HR />
+
+                <H1>Quality Feedback Reports 🗃️</H1>
+                <P>Videographer performance is measured on a monthly basis and resets at the beginning of every month. You will receive a <strong>Quality Feedback Report</strong> for each job reviewed through automation, which will post directly to your <B id="b18" />.</P>
+                <P>The Quality Feedback Report is a tool for both you and your direct supervisor to identify high-performance areas and areas of improvement. You can get more frequent updates by meeting with your direct supervisor using the 1:1 Meeting Calendly Link at the top of your PMC channel.</P>
+                <H2>ADDITIONAL RESOURCES:</H2>
+                <UL items={[<a href="https://app.getguru.com/card/c67MxGri/Abbreviations-Symbols-Guide" style={{ color: "#1a73e8" }}>PMQ, PMK, Individual, Abbreviations &amp; Symbols</a>]} />
+
+              </div>{/* end scroll */}
+
+              {/* ── Word Bank ── */}
+              <div style={{ borderTop: "2px solid #e0e0e0", background: "#fafafa", padding: "10px 20px 12px", flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 7 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: "0.07em" }}>Word Bank</span>
+                    {!selectedBlank && !gameOver && <span style={{ fontSize: 11, color: "#aaa" }}>Click a blank in the card above, then select the missing word</span>}
+                    {selectedBlank && !gameOver && <span style={{ fontSize: 11, color: "#1a73e8", fontWeight: 600 }}>▸ Now select the correct word below</span>}
+                    {gameOver && <span style={{ fontSize: 11, color: "#c62828", fontWeight: 700 }}>Game over — no lives remaining</span>}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                      <span style={{ fontSize: 11, color: "#888", fontWeight: 600 }}>Lives:</span>
+                      <Hearts lives={lives} />
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                      <div style={{ height: 5, width: 100, borderRadius: 3, background: "#e0e0e0", overflow: "hidden" }}>
+                        <div style={{ height: "100%", borderRadius: 3, width: `${progress}%`, background: progress === 100 ? "#00b887" : "#1a73e8", transition: "width 0.4s ease" }} />
+                      </div>
+                      <span style={{ fontSize: 11, color: "#888", whiteSpace: "nowrap" }}>{correctCount}/{TOTAL_BLANKS}</span>
+                    </div>
+                    <button onClick={handleReset} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 12, border: "1px solid #ddd", background: "#fff", cursor: "pointer", color: "#666" }}>↺ Reset</button>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                  {wordBank.map(word => (
+                    <button key={word.id} onClick={() => handleWordClick(word)} disabled={word.used || gameOver}
+                      style={{
+                        padding: "4px 12px", borderRadius: 20,
+                        border: word.used ? "1.5px solid #eee"
+                          : selectedBlank && !word.used
+                            ? "1.5px solid #1a73e8"
+                            : "1.5px solid #ddd",
+                        background: word.used ? "#f5f5f5"
+                          : selectedBlank && !word.used
+                            ? "#e8f0fe"
+                            : "#fff",
+                        color: word.used ? "#ccc"
+                          : selectedBlank && !word.used
+                            ? "#1a73e8"
+                            : "#333",
+                        fontSize: 12.5, fontWeight: 600,
+                        cursor: word.used || gameOver ? "default" : "pointer",
+                        transition: "all 0.15s",
+                        textDecoration: word.used ? "line-through" : "none",
+                        transform: selectedBlank && !word.used ? "scale(1.04)" : "scale(1)",
+                        boxShadow: selectedBlank && !word.used ? "0 2px 8px rgba(26,115,232,0.15)" : "none",
+                      }}>
+                      {word.word}
+                    </button>
+                  ))}
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>{/* end chrome */}
+
+        {/* Game Over Modal */}
+        {gameOver && !showCelebration && (
+          <div style={{ position: "absolute", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>
+            <div style={{ background: "#fff", borderRadius: 20, padding: "44px 52px", textAlign: "center", boxShadow: "0 40px 80px rgba(0,0,0,0.4)", maxWidth: 400 }}>
+              <div style={{ fontSize: 60, marginBottom: 10 }}>💔</div>
+              <h2 style={{ fontSize: 22, fontWeight: 800, color: "#c62828", margin: "0 0 6px" }}>Out of Lives</h2>
+              <p style={{ color: "#666", fontSize: 14, margin: "0 0 18px", lineHeight: 1.6 }}>You used all 3 lives before finishing. Review the QA Rubric card and try again — you've got this.</p>
+              <div style={{ background: "#fff5f5", border: "1px solid #ffcdd2", borderRadius: 10, padding: "10px 18px", marginBottom: 22 }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: "#c62828" }}>{correctCount}/{TOTAL_BLANKS} correct before game over</span>
+              </div>
+              <button onClick={handleReset} style={{ background: "#c62828", color: "#fff", border: "none", borderRadius: 12, padding: "10px 28px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Try Again</button>
+            </div>
+          </div>
+        )}
+
+        {/* Win Modal */}
+        {showCelebration && (
+          <div style={{ position: "absolute", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
+            <div style={{ background: "#fff", borderRadius: 20, padding: "48px 56px", textAlign: "center", boxShadow: "0 40px 80px rgba(0,0,0,0.4)", maxWidth: 420 }}>
+              <div style={{ fontSize: 64, marginBottom: 12 }}>🏆</div>
+              <h2 style={{ fontSize: 24, fontWeight: 800, color: "#1a1a1a", margin: "0 0 8px" }}>Rubric Expert!</h2>
+              <p style={{ color: "#666", fontSize: 14, margin: "0 0 18px", lineHeight: 1.6 }}>
+                You nailed all {TOTAL_BLANKS} blanks with {lives} {lives === 1 ? "life" : "lives"} to spare. The Vid Squad is lucky to have you.
+              </p>
+              <div style={{ background: "#e8fdf6", border: "1px solid #00b887", borderRadius: 10, padding: "12px 20px", marginBottom: 22, display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
+                <span style={{ fontSize: 17, fontWeight: 800, color: "#00b887" }}>{TOTAL_BLANKS}/{TOTAL_BLANKS} correct</span>
+                <span style={{ color: "#ccc" }}>·</span>
+                <Hearts lives={lives} />
+                <span style={{ fontSize: 12, color: "#777" }}>remaining</span>
+              </div>
+              <button onClick={handleReset} style={{ background: "#00b887", color: "#fff", border: "none", borderRadius: 12, padding: "10px 28px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Play Again</button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-6px); }
+          75% { transform: translateX(6px); }
+        }
+        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+      `}</style>
+    </div>
+  );
+}
+        
+        // === PASTE EVERYTHING YOU COPIED FROM CLAUDE ABOVE THIS LINE ===
+
+        const Root = ReactDOM.createRoot(document.getElementById('root'));
+        Root.render(<QARubricMission />);
     </script>
 </body>
 </html>
