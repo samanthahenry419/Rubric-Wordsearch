@@ -4,23 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QA Rubric Wordsearch</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { margin: 0; background-color: #f0f2f5; }
-    </style>
 </head>
 <body>
     <div id="root"></div>
 
-    <script type="text/babel" src="qa-rubric-wordsearch (1).jsx"></script>
+    <script type="text/babel" src="wordsearch.jsx"></script>
 
     <script type="text/babel">
-        // Wait for the file above to load, then render the QARubricMission component
-        const Root = ReactDOM.createRoot(document.getElementById('root'));
-        Root.render(<QARubricMission />);
+        // Adding a tiny delay to ensure the file above is fully read
+        window.addEventListener('load', () => {
+            const Root = ReactDOM.createRoot(document.getElementById('root'));
+            Root.render(<QARubricMission />);
+        });
     </script>
 </body>
 </html>
