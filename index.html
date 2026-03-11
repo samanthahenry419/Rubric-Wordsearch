@@ -3,204 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QA Rubric Wordsearch</title>
+    <title>Quality Rubric Breakdown</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { margin: 0; background-color: #f0f2f5; }
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-6px); }
-          75% { transform: translateX(6px); }
-        }
-        * { box-sizing: border-box; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+        body { margin: 0; background-color: #4a6a45; font-family: system-ui, -apple-system, sans-serif; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #bbb; }
     </style>
 </head>
 <body>
     <div id="root"></div>
-
     <script type="text/babel">
         const { useState, useRef } = React;
 
-        // ─── WORD BANK ───
         const ALL_WORDS = [
-          { id: "w1",  word: "OBS",           decoy: false },
-          { id: "w2",  word: "backup",        decoy: false },
-          { id: "w3",  word: "spotlight",     decoy: false },
-          { id: "w4",  word: "synced",        decoy: false },
-          { id: "w5",  word: "framing",       decoy: false },
-          { id: "w6",  word: "legal",         decoy: false },
-          { id: "w7",  word: "35%",           decoy: false },
-          { id: "w8",  word: "statistical",   decoy: false },
-          { id: "w9",  word: "worksheet",     decoy: false },
-          { id: "w10", word: "PMC",           decoy: false },
-          { id: "w11", word: "verbatim",      decoy: false },
-          { id: "w12", word: "suspended",     decoy: false },
-          { id: "w13", word: "Speaker View",  decoy: false },
-          { id: "w14", word: "14 days",       decoy: false },
-          { id: "w15", word: "15 seconds",    decoy: false },
-          { id: "w16", word: "30 seconds",    decoy: false },
-          { id: "w17", word: "volume",        decoy: false },
-          { id: "w18", word: "PMQ",           decoy: false },
-          { id: "w19", word: "#guru-video-help", decoy: false },
-          { id: "w20", word: "distracting",      decoy: false },
-          { id: "w21", word: "middle",           decoy: false },
-          { id: "d1",  word: "transcript",    decoy: true  },
-          { id: "d2",  word: "AWS",           decoy: true  },
-          { id: "d3",  word: "dashboard",     decoy: true  },
-          { id: "d4",  word: "60 seconds",    decoy: true  },
-          { id: "d5",  word: "cloud",         decoy: true  },
-          { id: "d6",  word: "counsel",       decoy: true  },
+            { id: "w1", word: "OBS" }, { id: "w2", word: "backup" }, { id: "w3", word: "spotlight" },
+            { id: "w4", word: "synced" }, { id: "w5", word: "framing" }, { id: "w6", word: "legal" },
+            { id: "w7", word: "35%" }, { id: "w8", word: "statistical" }, { id: "w9", word: "worksheet" },
+            { id: "w10", word: "PMC" }, { id: "w11", word: "verbatim" }, { id: "w12", word: "suspended" },
+            { id: "w13", word: "Speaker View" }, { id: "w14", word: "14 days" }, { id: "w15", word: "15 seconds" },
+            { id: "w16", word: "30 seconds" }, { id: "w17", word: "volume" }, { id: "w18", word: "PMQ" },
+            { id: "w19", word: "#guru-video-help" }, { id: "w20", word: "distracting" }, { id: "w21", word: "middle" },
+            { id: "d1", word: "transcript" }, { id: "d2", word: "AWS" }, { id: "d3", word: "dashboard" },
+            { id: "d4", word: "60 seconds" }, { id: "d5", word: "cloud" }, { id: "d6", word: "counsel" }
         ];
+
+        const ANSWER_KEY = {
+            b1: "w8", b2: "w7", b3: "w1", b4: "w2", b5: "w4", b6: "w13", b7: "w5", b8: "w3", b9: "w6",
+            b10: "w11", b11: "w15", b12: "w12", b13: "w9", b14: "w16", b15: "w14", b16: "w17", b17: "w18",
+            b18: "w10", b19: "w19", b20: "w20", b21: "w21"
+        };
 
         const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
 
-        const ANSWER_KEY = {
-          b1: "w8", b2: "w7", b3: "w1", b4: "w2", b5: "w4", b6: "w13",
-          b7: "w5", b8: "w3", b9: "w6", b10: "w11", b11: "w15", b12: "w12",
-          b13: "w9", b14: "w16", b15: "w14", b16: "w17", b17: "w18", b18: "w10",
-          b19: "w19", b20: "w20", b21: "w21",
-        };
-
-        const TOTAL_BLANKS = Object.keys(ANSWER_KEY).length;
-        const MAX_LIVES = 3;
-
-        function Blank({ id, selectedBlank, setSelectedBlank, fills, correct, shake, gameOver }) {
-          const isCorrect = correct[id];
-          const isSelected = selectedBlank === id;
-          const isShaking = shake === id;
-          const filledWord = ALL_WORDS.find(w => w.id === fills[id])?.word;
-
-          if (isCorrect) {
-            return (
-              <span style={{ display: "inline-block", padding: "1px 8px", margin: "0 2px", borderRadius: 3, border: "1.5px solid #00b887", background: "#00b88718", color: "#00b887", fontWeight: 700, fontSize: 13, verticalAlign: "middle", whiteSpace: "nowrap" }}>{filledWord}</span>
-            );
-          }
-          return (
-            <span onClick={() => !gameOver && setSelectedBlank(id === selectedBlank ? null : id)} style={{ display: "inline-block", minWidth: 80, padding: "1px 8px", margin: "0 2px", borderRadius: 3, border: isSelected ? "1.5px solid #1a73e8" : "1.5px dashed #bbb", background: isSelected ? "#e8f0fe" : "#f5f5f5", color: isSelected ? "#1a73e8" : "#bbb", fontWeight: 600, fontSize: 13, cursor: gameOver ? "default" : "pointer", transition: "all 0.15s", verticalAlign: "middle", textAlign: "center", animation: isShaking ? "shake 0.4s" : "none" }}>
-              {isSelected ? "▸ pick a word" : "[ ______ ]"}
-            </span>
-          );
-        }
-
-        function Hearts({ lives }) {
-          return (
-            <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
-              {Array.from({ length: MAX_LIVES }).map((_, i) => (
-                <span key={i} style={{ fontSize: 15, opacity: i < lives ? 1 : 0.2, filter: i < lives ? "none" : "grayscale(1)", transition: "opacity 0.3s" }}>❤️</span>
-              ))}
-            </div>
-          );
-        }
-
         function QARubricMission() {
-          const [fills, setFills] = useState({});
-          const [selectedBlank, setSelectedBlank] = useState(null);
-          const [wordBank, setWordBank] = useState(() => shuffle(ALL_WORDS).map(w => ({ ...w, used: false })));
-          const [shake, setShake] = useState(null);
-          const [correct, setCorrect] = useState({});
-          const [lives, setLives] = useState(MAX_LIVES);
-          const [showCelebration, setShowCelebration] = useState(false);
-          const [gameOver, setGameOver] = useState(false);
-          const [wrongFlash, setWrongFlash] = useState(false);
+            const [fills, setFills] = useState({});
+            const [selectedBlank, setSelectedBlank] = useState(null);
+            const [wordBank, setWordBank] = useState(() => shuffle(ALL_WORDS).map(w => ({ ...w, used: false })));
+            const [correct, setCorrect] = useState({});
+            const [lives, setLives] = useState(3);
+            const [shake, setShake] = useState(null);
+            const [gameOver, setGameOver] = useState(false);
+            const [win, setWin] = useState(false);
 
-          const correctCount = Object.values(correct).filter(Boolean).length;
-          const progress = Math.round((correctCount / TOTAL_BLANKS) * 100);
+            const handleWordClick = (word) => {
+                if (!selectedBlank || word.used || gameOver) return;
+                if (ANSWER_KEY[selectedBlank] === word.id) {
+                    const newCorrect = { ...correct, [selectedBlank]: true };
+                    setFills({ ...fills, [selectedBlank]: word.id });
+                    setCorrect(newCorrect);
+                    setWordBank(wordBank.map(w => w.id === word.id ? { ...w, used: true } : w));
+                    setSelectedBlank(null);
+                    if (Object.keys(newCorrect).length === 21) setWin(true);
+                } else {
+                    setShake(selectedBlank);
+                    setLives(l => l - 1);
+                    if (lives <= 1) setGameOver(true);
+                    setTimeout(() => setShake(null), 500);
+                }
+            };
 
-          const handleWordClick = (word) => {
-            if (!selectedBlank || word.used || gameOver) return;
-            const expected = ANSWER_KEY[selectedBlank];
-            if (expected === word.id) {
-              const newCorrect = { ...correct, [selectedBlank]: true };
-              setFills(f => ({ ...f, [selectedBlank]: word.id }));
-              setCorrect(newCorrect);
-              setWordBank(wb => wb.map(w => w.id === word.id ? { ...w, used: true } : w));
-              setSelectedBlank(null);
-              if (Object.values(newCorrect).filter(Boolean).length === TOTAL_BLANKS) {
-                setTimeout(() => setShowCelebration(true), 400);
-              }
-            } else {
-              setShake(selectedBlank);
-              setWrongFlash(true);
-              setTimeout(() => { setShake(null); setWrongFlash(false); }, 500);
-              const newLives = lives - 1;
-              setLives(newLives);
-              if (newLives <= 0) setTimeout(() => setGameOver(true), 600);
-            }
-          };
+            const B = (id) => {
+                const isCorrect = correct[id];
+                const isSelected = selectedBlank === id;
+                const filledWord = ALL_WORDS.find(w => w.id === fills[id])?.word;
+                return (
+                    <span onClick={() => !isCorrect && !gameOver && setSelectedBlank(id)} 
+                          className={`inline-block px-2 py-0.5 mx-1 rounded border-2 transition-all cursor-pointer align-middle text-sm font-bold
+                          ${isCorrect ? "border-green-500 bg-green-50 text-green-600" : 
+                            isSelected ? "border-blue-500 bg-blue-50 text-blue-600 outline-none ring-2 ring-blue-200" : "border-dashed border-gray-300 bg-gray-50 text-gray-400"}`}
+                          style={{ minWidth: '80px', textAlign: 'center', animation: shake === id ? 'shake 0.4s' : 'none' }}>
+                        {isCorrect ? filledWord : isSelected ? "Select..." : "[ ____ ]"}
+                    </span>
+                );
+            };
 
-          const handleReset = () => {
-            setFills({}); setCorrect({}); setSelectedBlank(null);
-            setWordBank(shuffle(ALL_WORDS).map(w => ({ ...w, used: false }))); 
-            setShowCelebration(false); setGameOver(false); setShake(null); 
-            setLives(MAX_LIVES); setWrongFlash(false);
-          };
-
-          const B = ({ id }) => <Blank id={id} selectedBlank={selectedBlank} setSelectedBlank={setSelectedBlank} fills={fills} correct={correct} shake={shake} gameOver={gameOver} />;
-          const H1 = ({ children }) => <h1 style={{ fontSize: 24, fontWeight: 700, margin: "20px 0 10px" }}>{children}</h1>;
-          const H2 = ({ children }) => <h2 style={{ fontSize: 18, fontWeight: 700, margin: "15px 0 8px" }}>{children}</h2>;
-          const P = ({ children }) => <p style={{ fontSize: 14, margin: "8px 0", lineHeight: "1.6" }}>{children}</p>;
-          const Callout = ({ color, children }) => {
-            const map = { green: "#e0ecd6", blue: "#e0f1ff", purple: "#ece0ff" };
-            return <div style={{ background: map[color] || "#f0f0f0", padding: "12px", borderRadius: "8px", margin: "10px 0", fontSize: "14px" }}>{children}</div>;
-          };
-
-          return (
-            <div style={{ width: "100%", height: "100vh", overflow: "hidden", fontFamily: "sans-serif", background: "#2e4a2e" }}>
-                <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "95%", maxWidth: "900px", height: "90vh", background: wrongFlash ? "#fff5f5" : "#fff", borderRadius: "12px", display: "flex", flexDirection: "column", boxShadow: "0 20px 50px rgba(0,0,0,0.3)" }}>
-                    <div style={{ background: "#dee1e6", padding: "10px", borderRadius: "12px 12px 0 0", display: "flex", gap: "8px" }}>
-                        <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#ff5f57" }} />
-                        <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#febc2e" }} />
-                        <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#28c840" }} />
-                    </div>
-                    
-                    <div style={{ flex: 1, overflowY: "auto", padding: "20px 40px" }}>
-                        <h1 style={{ fontSize: "28px", fontWeight: "bold" }}>Quality Rubric Breakdown</h1>
-                        <H1>What is Quality? 🏆️</H1>
-                        <P>The QA team randomly selects 1 to 2 jobs from each videographer. Each review is done by downloading the <B id="b3" /> recording for that job.</P>
-                        <P><strong>Statistical significance:</strong> We need to review, at minimum, <B id="b2" /> of total eligible jobs to maintain <B id="b1" /> significance.</P>
-                        
-                        <H2>1 — 🟢 OBS Recording Correct 📹</H2>
-                        <Callout color="green">QA relies on backup recordings. Zoom should be set to <strong>"<B id="b6" />"</strong>.</Callout>
-                        <P>Ensure your <B id="b4" /> captures everything. Videographer must be <B id="b5" /> within 5 seconds of the CR.</P>
-                        
-                        <H2>5 — 🟢 Witness Framing 🖼️</H2>
-                        <P>Work with the witness to ensure the backdrop isn't <B id="b20" />. Confirm their full <B id="b9" /> name, including <B id="b21" /> names.</P>
-                        
-                        <H2>10 — 🟢 Official Read-On 🎙️</H2>
-                        <P>This must be read <B id="b10" />. If you take longer than <B id="b11" /> to respond to an off-the-record call, points are lost.</P>
-
-                        <H2>15 — 🟣 Video Worksheet 📥</H2>
-                        <P>The <B id="b13" /> must match the OBS recording. Reports post directly to your <B id="b18" /> in the <B id="b18" /> channel.</P>
-                    </div>
-
-                    <div style={{ padding: "15px 25px", background: "#f8f9fa", borderTop: "1px solid #ddd" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-                            <span style={{ fontWeight: "bold", fontSize: "12px" }}>WORD BANK ({correctCount}/{TOTAL_BLANKS})</span>
-                            <Hearts lives={lives} />
+            return (
+                <div className="min-h-screen p-4 md:p-8 flex items-center justify-center">
+                    <div className="bg-white w-full max-w-4xl h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-black/20">
+                        {/* Browser Header */}
+                        <div className="bg-[#dee1e6] p-3 flex items-center gap-2 border-b border-gray-300">
+                            <div className="flex gap-1.5"><div className="w-3 h-3 rounded-full bg-[#ff5f57] shadow-inner"/> <div className="w-3 h-3 rounded-full bg-[#febc2e] shadow-inner"/> <div className="w-3 h-3 rounded-full bg-[#28c840] shadow-inner"/></div>
+                            <div className="bg-white px-4 py-1.5 rounded-t-lg text-xs font-medium ml-4 shadow-sm">Quality Rubric Breakdown — Guru</div>
                         </div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                            {wordBank.map(word => (
-                                <button key={word.id} onClick={() => handleWordClick(word)} disabled={word.used || gameOver} style={{ padding: "6px 12px", borderRadius: "20px", border: "1px solid #ccc", background: word.used ? "#eee" : "#fff", opacity: word.used ? 0.5 : 1, cursor: word.used ? "default" : "pointer", fontSize: "12px", fontWeight: "600" }}>{word.word}</button>
-                            ))}
+
+                        {/* Content Area */}
+                        <div className="flex-1 overflow-y-auto p-8 md:p-12 space-y-8 text-gray-800 leading-relaxed">
+                            <h1 className="text-4xl font-bold border-b-4 border-green-500 pb-4">Quality Rubric Breakdown</h1>
+                            
+                            <section>
+                                <h2 className="text-2xl font-bold mt-8 mb-4">What is Quality? 🏆️</h2>
+                                <p>The QA team reviews depositions to provide a quality score. QA randomly selects 1 to 2 jobs from each videographer each week by downloading the {B('b3')} recording.</p>
+                                <p className="mt-4"><strong>Statistical significance:</strong> To hold {B('b1')} significance, we need to review at minimum {B('b2')} of total eligible jobs.</p>
+                            </section>
+
+                            <hr className="border-gray-100" />
+
+                            <section>
+                                <h2 className="text-xl font-bold text-green-700">1 — 🟢 OBS Recording Correct 📹</h2>
+                                <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400 my-4 italic">This is the most important task because QA relies on backup recordings.</div>
+                                <ul className="list-disc ml-6 space-y-2">
+                                    <li>Zoom should be set to <strong>"{B('b6')}"</strong>.</li>
+                                    <li>Log in to AWS to ensure your {B('b4')} captures everything.</li>
+                                    <li>Videographer must be {B('b5')} within 5 seconds of the CR.</li>
+                                </ul>
+                            </section>
+
+                            <section>
+                                <h2 className="text-xl font-bold text-green-700">5 — 🟢 Witness Framing 🖼️</h2>
+                                <p>Work with the witness to ensure the background isn't {B('b20')}. Confirm the full {B('b9')} name, including {B('b21')} names if provided.</p>
+                            </section>
+
+                            <section>
+                                <h2 className="text-xl font-bold text-green-700">6 — 🟢 Spotlight the Witness 🔦</h2>
+                                <p>{B('b8')} the witness prior to going on the record. If the spotlight is dropped, replace it within {B('b14')}.</p>
+                            </section>
+
+                            <section>
+                                <h2 className="text-xl font-bold text-green-700">9 — 🟢 General Recommendations ☝️</h2>
+                                <p>Room recordings are securely stored for {B('b15')}.</p>
+                            </section>
+
+                            <section>
+                                <h2 className="text-xl font-bold text-green-700">10 — 🟢 Official Read-On 🎙️</h2>
+                                <p>This must be read {B('b10')} (word-for-word). If you take longer than {B('b11')} to respond to an off-the-record call, points are lost.</p>
+                            </section>
+
+                            <section>
+                                <h2 className="text-xl font-bold text-blue-700">12 — 🔵 Responsiveness to Issues ❗</h2>
+                                <p>Serious issues should be addressed using {B('b19')}. Spotlight replacement must happen within {B('b14')}.</p>
+                            </section>
+
+                            <section>
+                                <h2 className="text-xl font-bold text-purple-700">13 — 🟣 Official Read-Off 🎙️</h2>
+                                <p>Classification of witness ({B('b17')}, PMK, etc) must be maintained. Correctly read the {B('b16')} number.</p>
+                            </section>
+
+                            <section>
+                                <h2 className="text-xl font-bold text-purple-700">14 — 🟣 Video Orders 📝</h2>
+                                <p>If a depo is {B('b12')}, you don't need to ask for orders on the record.</p>
+                            </section>
+
+                            <section>
+                                <h2 className="text-xl font-bold text-purple-700">15 — 🟣 Video Worksheet 📥</h2>
+                                <p>The {B('b13')} must match the recording. Reports post directly to your {B('b18')} in the {B('b18')} channel.</p>
+                            </section>
                         </div>
-                        <button onClick={handleReset} style={{ marginTop: "10px", fontSize: "11px", color: "#007bff", background: "none", border: "none", cursor: "pointer" }}>↺ Reset Game</button>
+
+                        {/* Word Bank Sidebar/Footer */}
+                        <div className="bg-gray-50 border-t border-gray-200 p-6">
+                            <div className="flex justify-between items-center mb-4">
+                                <span className="text-xs font-black uppercase tracking-widest text-gray-500">Word Bank ({Object.keys(correct).length}/21)</span>
+                                <div className="flex gap-1">
+                                    {[...Array(3)].map((_, i) => (
+                                        <span key={i} className={`text-lg transition-opacity ${i >= lives ? "opacity-20 grayscale" : ""}`}>❤️</span>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {wordBank.map(w => (
+                                    <button key={w.id} disabled={w.used || gameOver} onClick={() => handleWordClick(w)}
+                                            className={`px-3 py-1.5 rounded-full text-sm font-semibold border transition-all
+                                            ${w.used ? "bg-gray-200 border-gray-200 text-gray-400 line-through" : "bg-white border-gray-300 text-gray-700 hover:border-blue-500 hover:shadow-sm"}`}>
+                                        {w.word}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Modals */}
+                        {(gameOver || win) && (
+                            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-6">
+                                <div className="bg-white p-8 rounded-2xl shadow-2xl text-center max-w-sm w-full">
+                                    <div className="text-6xl mb-4">{win ? "🏆" : "💔"}</div>
+                                    <h2 className="text-2xl font-bold mb-2">{win ? "Rubric Expert!" : "Game Over"}</h2>
+                                    <p className="text-gray-600 mb-6">{win ? "You nailed every blank. The Vid Squad is lucky to have you!" : "You ran out of lives. Review the rubric and try again!"}</p>
+                                    <button onClick={() => window.location.reload()} className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-colors">Restart Game</button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
-
-                {gameOver && <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}><div style={{ textAlign: "center", color: "white" }}><h1>Out of Lives</h1><button onClick={handleReset} style={{ padding: "10px 20px", borderRadius: "8px", border: "none", background: "#ff5f57", color: "white", cursor: "pointer" }}>Try Again</button></div></div>}
-                {showCelebration && <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}><div style={{ textAlign: "center", color: "white" }}><h1>🏆 Rubric Expert!</h1><button onClick={handleReset} style={{ padding: "10px 20px", borderRadius: "8px", border: "none", background: "#28c840", color: "white", cursor: "pointer" }}>Play Again</button></div></div>}
-            </div>
-          );
+            );
         }
 
-        const Root = ReactDOM.createRoot(document.getElementById('root'));
-        Root.render(<QARubricMission />);
+        ReactDOM.createRoot(document.getElementById('root')).render(<QARubricMission />);
     </script>
 </body>
 </html>
