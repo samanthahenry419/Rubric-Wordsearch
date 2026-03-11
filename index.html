@@ -147,7 +147,7 @@ function Hearts({ lives }) {
   );
 }
 
-export default function QARubricMission() {
+function QARubricMission() {
   const initBank = () => shuffle(ALL_WORDS).map(w => ({ ...w, used: false }));
 
   const [fills, setFills] = useState({});
